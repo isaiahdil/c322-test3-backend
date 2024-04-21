@@ -1,55 +1,45 @@
 package edu.iu.c322.test3.controllers;
 
-import edu.iu.habahram.primesservice.model.Customer;
-import edu.iu.habahram.primesservice.service.IAuthenticationService;
-import edu.iu.habahram.primesservice.service.TokenService;
+import edu.iu.c322.test3.model.Customer;
+import edu.iu.c322.test3.service.IAuthenticationService;
+import edu.iu.c322.test3.service.TokenService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.io.IOException;
+import edu.iu.c322.test3.repository.CustomerRepository;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
+@CrossOrigin
 public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
-    private final IAuthenticationService authenticationService;
-
-    private TokenService tokenService;
-
-
+    private final TokenService tokenService;
+    CustomerRepository customerRepository;
     public AuthenticationController(AuthenticationManager authenticationManager,
-                                    IAuthenticationService authenticationService,
-                                    TokenService tokenService) {
+                                    TokenService tokenService,
+                                    CustomerRepository customerRepository) {
         this.authenticationManager = authenticationManager;
-        this.authenticationService = authenticationService;
         this.tokenService = tokenService;
+        this.customerRepository = customerRepository;
     }
-
-
     @PostMapping("/signup")
-    public boolean register(@RequestBody Customer customer) {
+    public void signup(@RequestBody Customer customer) {
         try {
-            authenticationService.register(customer);
-            return true;
-        } catch (IOException e) {
+            customerRepository.save(customer);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
     @PostMapping("/signin")
-    public String login(@RequestBody Customer customer) {
-            Authentication authentication = authenticationManager
-                    .authenticate(
-                            new UsernamePasswordAuthenticationToken(
-                                    customer.getUsername()
-                                    , customer.getPassword()));
-
-                return authentication.createToken();
+    public String login(@RequestBody Customer customer){
+        Authentication authentication = authenticationManager
+                .authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                customer.getUsername(),
+                                customer.getPassword()));
+        return tokenService.generateToken(authentication);
     }
-
-
 }
